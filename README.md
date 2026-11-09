@@ -15,6 +15,8 @@ Oakley Meta glasses ──Bluetooth──▶ iPhone app ──HTTPS──▶ ser
 - **prompt/system.md**: the assistant's instructions, tuned for being heard rather than read.
 - **store/**: your par levels, store profile, and checklists. **Fill in the `[fill in]` placeholders.** This is the biggest thing that makes the AI good for *your* store.
 
+> **No Mac? Start with [NO-MAC.md](NO-MAC.md).** It sets up a cloud server plus an iPhone Shortcut, using only your phone and a browser.
+
 ## What makes the answers good
 
 - Uses Claude Opus 5.5 with effort `low` so the first words come fast. Set `KC_EFFORT=medium` if you want deeper prep planning and can wait a little longer.
