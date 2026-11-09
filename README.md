@@ -51,7 +51,7 @@ cd ios && xcodegen && open KitchenCopilot.xcodeproj
 
 In Xcode, choose your Apple ID team under Signing & Capabilities, plug in your iPhone, and press Run. In the app's Settings, enter the server URL and the same `APP_TOKEN`.
 
-For testing on the same Wi-Fi, use your Mac's address, e.g. `http://192.168.1.20:8787`. iOS blocks plain `http` by default, so for real use put the server on HTTPS (step 3), or use Tailscale with `tailscale serve` for a private HTTPS URL.
+For testing on the same Wi-Fi, use your Mac's local name, e.g. `http://Eriks-MacBook-Air.local:8787` (find it in System Settings → General → Sharing → Local hostname). The app allows plain `http` only for `.local` addresses. For real shifts, put the server on HTTPS (step 3), or use Tailscale with `tailscale serve` for a private HTTPS URL.
 
 ### 3. Host it for real shifts
 

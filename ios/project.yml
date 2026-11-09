@@ -22,4 +22,14 @@ targets:
         UIBackgroundModes: [audio]
         NSMicrophoneUsageDescription: Listens for your questions through your glasses or phone mic.
         NSSpeechRecognitionUsageDescription: Turns your voice into text on this iPhone so the assistant can answer.
-        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UIRequiresFullScreen: false
+        # Lets the app reach the server on your Mac over Wi-Fi (http://Your-Mac.local:8787)
+        # while testing. Real use should be an https:// server.
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+        NSLocalNetworkUsageDescription: Connects to your Kitchen Copilot server on your Wi-Fi while testing.
