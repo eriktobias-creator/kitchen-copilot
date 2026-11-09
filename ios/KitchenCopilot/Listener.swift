@@ -57,15 +57,65 @@ final class Listener {
 
     func start() throws {
         guard let recognizer, recognizer.isAvailable else { throw ListenerError.recognizerUnavailable }
+        observeConfigChanges()
         let input = engine.inputNode
         input.removeTap(onBus: 0)
+        // Use the mic's real hardware format. Glasses over Bluetooth run at
+        // 16 kHz; the phone mic at 48 kHz. Using a stale format fails.
+        let format = input.inputFormat(forBus: 0)
+        guard format.sampleRate > 0, format.channelCount > 0 else { throw ListenerError.micNotReady }
         let sink = self.sink
-        input.installTap(onBus: 0, bufferSize: 1024, format: input.outputFormat(forBus: 0)) { buffer, _ in
+        input.installTap(onBus: 0, bufferSize: 1024, format: format) { buffer, _ in
             sink.append(buffer)
         }
         engine.prepare()
         try engine.start()
         beginTask()
+    }
+
+    /// Starts, retrying while iOS finishes switching the audio route
+    /// (e.g. to the glasses right after the session activates).
+    func startWhenReady() async throws {
+        var lastError: Error = ListenerError.micNotReady
+        for delayMs in [300, 700, 1500] {
+            try? await Task.sleep(for: .milliseconds(delayMs))
+            do {
+                stop()
+                try start()
+                return
+            } catch {
+                lastError = error
+            }
+        }
+        throw lastError
+    }
+
+    private var observingConfig = false
+    private var restarting = false
+
+    /// Glasses connecting/disconnecting changes the mic format; the engine
+    /// stops itself and must be rebuilt.
+    private func observeConfigChanges() {
+        guard !observingConfig else { return }
+        observingConfig = true
+        NotificationCenter.default.addObserver(
+            forName: .AVAudioEngineConfigurationChange, object: engine, queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in await self?.rebuildAfterConfigChange() }
+        }
+    }
+
+    var onRestartFailed: ((Error) -> Void)?
+
+    private func rebuildAfterConfigChange() async {
+        guard !restarting else { return }
+        restarting = true
+        defer { restarting = false }
+        do {
+            try await startWhenReady()
+        } catch {
+            onRestartFailed?(error)
+        }
     }
 
     var isRunning: Bool { engine.isRunning }
@@ -213,5 +263,11 @@ final class Listener {
 
 enum ListenerError: LocalizedError {
     case recognizerUnavailable
-    var errorDescription: String? { "Speech recognition isn't available on this iPhone right now." }
+    case micNotReady
+    var errorDescription: String? {
+        switch self {
+        case .recognizerUnavailable: "Speech recognition isn't available on this iPhone right now."
+        case .micNotReady: "The microphone isn't ready. Tap the button to try again."
+        }
+    }
 }

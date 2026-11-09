@@ -75,7 +75,7 @@ final class AssistantViewModel {
                 guard let self else { return }
                 switch type {
                 case .began: self.pauseForCall()
-                case .ended: self.restartAudio()
+                case .ended: await self.restartAudio()
                 default: break
                 }
             }
@@ -85,7 +85,10 @@ final class AssistantViewModel {
             status = .problem("Allow Microphone and Speech Recognition in iPhone Settings.")
             return
         }
-        restartAudio()
+        listener.onRestartFailed = { [weak self] error in
+            self?.status = .problem(Self.friendly(error))
+        }
+        await restartAudio()
     }
 
     private func pauseForCall() {
@@ -96,12 +99,12 @@ final class AssistantViewModel {
     }
 
     /// (Re)starts the mic and recognizer. Safe to call repeatedly.
-    private func restartAudio() {
+    private func restartAudio() async {
         do {
             listener.stop()
             try AudioRouter.activate()
+            try await listener.startWhenReady()
             route = AudioRouter.outputName
-            try listener.start()
             status = isConfigured ? .waiting : .setup
         } catch {
             status = .problem(Self.friendly(error))
@@ -123,7 +126,7 @@ final class AssistantViewModel {
         if status == .speaking || status == .thinking {
             stopTalking()
         } else if !listener.isRunning {
-            restartAudio() // e.g. after a call; tap again to ask
+            Task { await restartAudio() } // e.g. after a call; tap again to ask
         } else {
             listener.captureNow()
         }
