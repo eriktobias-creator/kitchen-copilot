@@ -64,24 +64,66 @@ final class AssistantViewModel {
             Task { @MainActor in self?.route = AudioRouter.outputName }
         }
 
+        // Phone/FaceTime calls take the mic away. Pause, then come back by
+        // ourselves when the call ends.
+        NotificationCenter.default.addObserver(
+            forName: AVAudioSession.interruptionNotification, object: nil, queue: .main
+        ) { [weak self] note in
+            let raw = note.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt
+            let type = raw.flatMap(AVAudioSession.InterruptionType.init(rawValue:))
+            Task { @MainActor in
+                guard let self else { return }
+                switch type {
+                case .began: self.pauseForCall()
+                case .ended: self.restartAudio()
+                default: break
+                }
+            }
+        }
+
         guard await Listener.requestPermissions() else {
             status = .problem("Allow Microphone and Speech Recognition in iPhone Settings.")
             return
         }
+        restartAudio()
+    }
+
+    private func pauseForCall() {
+        current?.cancel()
+        speaker.stop()
+        listener.stop()
+        status = .problem("Paused for a call. I'll start listening again when it ends.")
+    }
+
+    /// (Re)starts the mic and recognizer. Safe to call repeatedly.
+    private func restartAudio() {
         do {
+            listener.stop()
             try AudioRouter.activate()
             route = AudioRouter.outputName
             try listener.start()
             status = isConfigured ? .waiting : .setup
         } catch {
-            status = .problem(error.localizedDescription)
+            status = .problem(Self.friendly(error))
         }
+    }
+
+    private static func friendly(_ error: Error) -> String {
+        let code = (error as NSError).code
+        if code == AVAudioSession.ErrorCode.isBusy.rawValue
+            || code == AVAudioSession.ErrorCode.insufficientPriority.rawValue
+            || code == AVAudioSession.ErrorCode.cannotInterruptOthers.rawValue {
+            return "Another app or call is using the mic. End it, then tap the button."
+        }
+        return error.localizedDescription
     }
 
     /// Big button on screen: ask without the wake phrase, or stop talking.
     func tapToAsk() {
         if status == .speaking || status == .thinking {
             stopTalking()
+        } else if !listener.isRunning {
+            restartAudio() // e.g. after a call; tap again to ask
         } else {
             listener.captureNow()
         }

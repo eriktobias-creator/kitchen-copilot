@@ -68,6 +68,20 @@ final class Listener {
         beginTask()
     }
 
+    var isRunning: Bool { engine.isRunning }
+
+    /// Fully release the mic, e.g. when a phone call takes over.
+    func stop() {
+        cancelCapture()
+        refreshTimer?.invalidate()
+        generation += 1
+        task?.cancel()
+        request?.endAudio()
+        sink.set(nil)
+        engine.stop()
+        engine.inputNode.removeTap(onBus: 0)
+    }
+
     /// Stop hearing ourselves while the answer is spoken.
     func pause() {
         sink.setMuted(true)
