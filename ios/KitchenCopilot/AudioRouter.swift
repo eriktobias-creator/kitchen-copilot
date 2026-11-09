@@ -15,6 +15,15 @@ enum AudioRouter {
         try session.setActive(true)
     }
 
+    /// When the glasses' own mic is used (Meta toolkit), the phone only needs
+    /// to talk. Plain playback goes to the glasses over A2DP: better sound and
+    /// none of the Bluetooth-mic format switching.
+    static func activatePlaybackOnly() throws {
+        let session = AVAudioSession.sharedInstance()
+        try session.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
+        try session.setActive(true)
+    }
+
     static var outputName: String {
         AVAudioSession.sharedInstance().currentRoute.outputs.first?.portName ?? "None"
     }

@@ -9,7 +9,8 @@ struct ContentView: View {
         NavigationStack {
             VStack(spacing: 20) {
                 HStack {
-                    Label(model.route, systemImage: "headphones")
+                    Label(model.usingGlasses ? "Glasses mic" : model.route,
+                          systemImage: model.usingGlasses ? "eyeglasses" : "headphones")
                         .font(.footnote).foregroundStyle(.secondary)
                     Spacer()
                     Toggle("Rush", isOn: $model.rush).fixedSize()
@@ -70,8 +71,22 @@ struct SettingsView: View {
                 } header: { Text("Server") } footer: {
                     Text("The token is stored in the iPhone Keychain. Your Claude API key stays on the server, never on the phone.")
                 }
+                Section {
+                    LabeledContent("Status", value: model.glassesState.label)
+                    Button(model.glassesState == .notRegistered ? "Connect glasses" : "Allow glasses microphone") {
+                        Task {
+                            if model.glassesState == .notRegistered {
+                                await model.glasses.register()
+                            } else {
+                                await model.glasses.requestMicrophone()
+                            }
+                        }
+                    }
+                } header: { Text("Oakley Meta glasses") } footer: {
+                    Text("Needs Developer Mode on in the Meta AI app. Opens Meta AI to approve Kitchen Copilot, then come back.")
+                }
                 Section("How to use") {
-                    Text("Pair your glasses to this iPhone over Bluetooth. Keep this app open (the screen can lock). Say \u{201C}Hey kitchen,\u{201D} then your question, then pause.")
+                    Text("Say \u{201C}Hey Meta, start Kitchen Copilot\u{201D} to open the app. Then press the capture button and ask, or say \u{201C}Hey kitchen\u{201D} and your question.")
                     Text("Voice commands: \u{201C}rush mode on/off\u{201D}, \u{201C}start over\u{201D}, \u{201C}stop\u{201D}.")
                 }
             }

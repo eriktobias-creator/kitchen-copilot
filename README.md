@@ -16,6 +16,8 @@ Oakley Meta glasses ──Bluetooth──▶ iPhone app ──HTTPS──▶ ser
 - **store/**: your par levels, store profile, and checklists. **Fill in the `[fill in]` placeholders.** This is the biggest thing that makes the AI good for *your* store.
 
 > **No Mac? Start with [NO-MAC.md](NO-MAC.md).** It sets up a cloud server plus an iPhone Shortcut, using only your phone and a browser.
+>
+> **Want "Hey Meta, start Kitchen Copilot" and the capture button?** See [GLASSES.md](GLASSES.md). It uses Meta's glasses toolkit and needs a Mac with Xcode to build.
 
 ## What makes the answers good
 
